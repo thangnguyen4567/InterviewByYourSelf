@@ -1,6 +1,6 @@
 # Ôn Phỏng Vấn — trang web tĩnh
 
-Tổng hợp câu hỏi phỏng vấn: PHP, C#, .NET, Architectures, Database, DevOps, Design Patterns, Angular, ReactJS, Next.js, System Design.
+Tổng hợp câu hỏi phỏng vấn: PHP, C#, .NET, Architectures, Database, DevOps, Design Patterns, Angular, ReactJS, Next.js, System Design, Message Broker, Redis.
 
 ## Mở trang
 Mở trực tiếp `index.html` bằng trình duyệt (không cần server, chạy offline được).
