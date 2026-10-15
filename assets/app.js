@@ -794,14 +794,13 @@
   const lsSet = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) { /* ignore */ } };
   let syncKey = lsGet(SYNC_KEY_LS);
   let profile = lsGet(SYNC_PROFILE_LS) || 'default';
-  let syncStatus = API ? (syncKey ? 'idle' : 'nokey') : 'local';
+  let syncStatus = API ? 'idle' : 'local';
   let syncTimer = null, retryTimer = null, syncing = false, syncAgain = false;
   if (store.syncedAt === undefined && SYNC_FIELDS.some((f) => Object.keys(store[f] || {}).length)) store.dirty = true;
 
   const syncBtn = $('#syncBtn');
   const STATUS = {
     local:   ['💾', 'Chỉ lưu trên máy', 'Chưa cấu hình API đồng bộ (assets/config.js)'],
-    nokey:   ['🔑', 'Nhập sync key', 'Bấm để nhập sync key và bật đồng bộ MongoDB'],
     idle:    ['☁️', 'Đã đồng bộ', 'Tiến độ đã lưu lên MongoDB'],
     syncing: ['⏳', 'Đang đồng bộ…', 'Đang đồng bộ với server'],
     pending: ['⏳', 'Chờ đồng bộ', 'Có thay đổi chưa đẩy lên server'],
@@ -813,11 +812,11 @@
     if (!syncBtn) return;
     const [ico, label, title] = STATUS[st === 'idle' && store.dirty ? 'pending' : st];
     syncBtn.innerHTML = ico + ' <span class="hide-sm">' + label + '</span>';
-    syncBtn.title = title + (API && syncKey ? ' · profile: ' + profile + ' · bấm để đồng bộ ngay, Shift+bấm để đổi key' : '');
+    syncBtn.title = title + (API ? ' · bấm để đồng bộ ngay' : '');
     syncBtn.dataset.status = st;
   }
   function scheduleSync(delay = 1500) {
-    if (!API || !syncKey) return;
+    if (!API) return;
     clearTimeout(syncTimer);
     syncTimer = setTimeout(sync, delay);
     if (syncStatus === 'idle') setStatus('idle');
@@ -828,11 +827,11 @@
   }
   async function callApi(method, body) {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 10000);
+    const t = setTimeout(() => ctrl.abort(), 25000); // đủ cho cold start của serverless
     try {
       const res = await fetch(API + '/progress?profile=' + encodeURIComponent(profile), {
         method,
-        headers: Object.assign({ 'X-Sync-Key': syncKey }, body ? { 'Content-Type': 'application/json' } : {}),
+        headers: Object.assign(syncKey ? { 'X-Sync-Key': syncKey } : {}, body ? { 'Content-Type': 'application/json' } : {}),
         body: body ? JSON.stringify(body) : undefined,
         signal: ctrl.signal,
         cache: 'no-store',
@@ -864,7 +863,7 @@
     SYNC_FIELDS.forEach((f) => (store[f] = data[f] || {}));
   }
   async function sync() {
-    if (!API || !syncKey) return setStatus(API ? 'nokey' : 'local');
+    if (!API) return setStatus('local');
     if (syncing) { syncAgain = true; return; }
     syncing = true;
     clearTimeout(retryTimer);
@@ -911,11 +910,11 @@
     }
   }
   function askKey() {
-    const k = prompt('Nhập sync key (SYNC_KEY trong file .env của server).\nĐể trống để tắt đồng bộ trên máy này.', syncKey);
+    const k = prompt('Server yêu cầu sync key (SYNC_KEY cấu hình trên server):', syncKey);
     if (k === null) return;
     syncKey = k.trim();
     lsSet(SYNC_KEY_LS, syncKey);
-    if (!syncKey) return setStatus('nokey');
+    if (!syncKey) return;
     const p = prompt('Tên profile (dùng cùng tên trên các máy để chung tiến độ):', profile);
     if (p && /^[a-zA-Z0-9_-]{1,40}$/.test(p.trim()) && p.trim() !== profile) {
       profile = p.trim();
@@ -929,7 +928,7 @@
   if (syncBtn) {
     if (!API) syncBtn.style.display = 'none';
     syncBtn.onclick = (e) => {
-      if (!syncKey || syncStatus === 'auth' || e.shiftKey) askKey();
+      if (syncStatus === 'auth' || e.shiftKey) askKey();
       else sync();
     };
   }

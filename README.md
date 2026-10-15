@@ -13,8 +13,10 @@ GitHub Pages (web tĩnh) ──HTTPS──► API serverless (Vercel: api/*.js) 
 ```
 
 - Tiến độ (✅ đã thuộc, ⭐, điểm trắc nghiệm, câu từng sai) lưu trong trình duyệt trước, sau đó đẩy lên API.
-- Nút trạng thái trên thanh trên cùng: ☁️ đã đồng bộ · ⏳ chờ / đang đồng bộ · ⚠️ offline (API/DB lỗi, sẽ tự thử lại mỗi 60s) · 🔑 cần nhập sync key.
-  Bấm để đồng bộ ngay, **Shift + bấm** để đổi sync key / profile.
+- Nút trạng thái trên thanh trên cùng: ☁️ đã đồng bộ · ⏳ chờ / đang đồng bộ · ⚠️ offline (API/DB lỗi, tự thử lại mỗi 60s).
+- **Không cần nhập gì**: mở trang là tự đồng bộ (chế độ mở — không đặt `SYNC_KEY`). API chỉ cho 1 profile `default`,
+  chỉ nhận đúng các trường tiến độ, và chặn website khác gọi từ trình duyệt.
+- Muốn khóa lại: đặt `SYNC_KEY` trên server → trang sẽ hiện 🔑 để nhập key (Shift + bấm nút để đổi key).
 - Nhiều máy cùng một profile: tự gộp thay đổi (hợp các đánh dấu, điểm lấy cao nhất).
 - `MONGODB_URI` chỉ nằm ở server (biến môi trường), **không bao giờ** nằm trong code frontend. File `.env` đã được `.gitignore`.
 
@@ -24,15 +26,14 @@ npm install
 npm start            # build nội dung + mở http://localhost:3000
 ```
 Cấu hình trong `.env`: `MONGODB_URI`, `MONGODB_DB`, `SYNC_KEY`, `ALLOWED_ORIGINS`, `PORT`.
-Lần đầu mở trang, bấm 🔑 và nhập giá trị `SYNC_KEY`.
 
 ### Deploy API lên Vercel (miễn phí)
 1. Đẩy repo lên GitHub, vào https://vercel.com → **Add New Project** → import repo này (Framework: *Other*).
 2. **Settings → Environment Variables** thêm:
    - `MONGODB_URI` = chuỗi kết nối Atlas
    - `MONGODB_DB` = `interview_prep`
-   - `SYNC_KEY` = khóa bí mật tự chọn (giống `.env`)
-   - `ALLOWED_ORIGINS` = `https://<username>.github.io` (chỉ cho trang của bạn gọi API)
+   - (tùy chọn) `SYNC_KEY` — chỉ đặt nếu muốn bắt nhập key
+   - (tùy chọn) `ALLOWED_ORIGINS` — chỉ cần khi web chạy ở domain khác API (vd GitHub Pages: `https://<username>.github.io`)
 3. Deploy → kiểm tra `https://<project>.vercel.app/api/health` trả về `{"ok":true,"db":"up"}`.
 4. MongoDB Atlas → **Network Access** → cho phép `0.0.0.0/0` (Vercel không có IP cố định).
 
@@ -40,7 +41,7 @@ Lần đầu mở trang, bấm 🔑 và nhập giá trị `SYNC_KEY`.
 1. Sửa `assets/config.js`: `window.SYNC_API = 'https://<project>.vercel.app/api';`
 2. Chạy `node build.js` và commit cả `assets/content.js`.
 3. GitHub repo → **Settings → Pages** → Source: *Deploy from a branch* → `main` / `(root)`.
-4. Mở `https://<username>.github.io/<repo>/`, bấm 🔑 nhập `SYNC_KEY`.
+4. Mở `https://<username>.github.io/<repo>/`.
 
 ## Thêm / sửa nội dung
 1. Sửa file trong `content/*.md`
